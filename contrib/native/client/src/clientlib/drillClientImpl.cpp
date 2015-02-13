@@ -203,7 +203,9 @@ void DrillClientImpl::handleHandshake(ByteBuf_t _buf,
         const boost::system::error_code& err,
         size_t bytes_transferred) {
     boost::system::error_code error=err;
-
+	// cancel the timer
+	m_deadlineTimer.cancel();
+	DRILL_LOG(LOG_TRACE) << "Deadline timer cancelled." << std::endl;
     if(!error){
         InBoundRpcMessage msg;
         uint32_t length = 0;
@@ -223,12 +225,6 @@ void DrillClientImpl::handleHandshake(ByteBuf_t _buf,
                 b+=dataBytesRead;
             }
             DrillClientImpl::s_decoder.Decode(m_rbuf+bytes_read, length, msg);
-            if(DrillClientConfig::getHandshakeTimeout() > 0){
-                // cancel deadline timer only when we successfully decode the data and get ack
-                DRILL_LOG(LOG_TRACE) << "DrillClientImpl::handleHandshake: Cancel deadline timer.\n";
-                m_deadlineTimer.cancel();
-            }
-			DRILL_LOG(LOG_TRACE) << "Handshake Deadline timer cancelled."  << std::endl;
         }else{
             DRILL_LOG(LOG_TRACE) << "DrillClientImpl::handleHandshake: ERR_CONN_RDFAIL. No handshake.\n";
             handleConnError(CONN_FAILURE, getMessage(ERR_CONN_RDFAIL, "No handshake"));
@@ -258,8 +254,7 @@ void DrillClientImpl::handleHShakeReadTimeout(const boost::system::error_code & 
         if (m_deadlineTimer.expires_at() <= boost::asio::deadline_timer::traits_type::now()){
             // The deadline has passed.
             m_deadlineTimer.expires_at(boost::posix_time::pos_infin);
-            DRILL_LOG(LOG_TRACE) << "DrillClientImpl::HandleHShakeReadTimeout: Deadline timer expired.\n";
-            DRILL_LOG(LOG_TRACE) << "DrillClientImpl::handleHShakeReadTimeout: ERR_CONN_HSHAKETIMOUT.\n";
+			DRILL_LOG(LOG_TRACE) << "DrillClientImpl::HandleHShakeReadTimeout: Deadline timer expired; ERR_CONN_HSHAKETIMOUT.\n";
             handleConnError(CONN_HANDSHAKE_TIMEOUT, getMessage(ERR_CONN_HSHAKETIMOUT));
             m_io_service.stop();
             boost::system::error_code ignorederr;
@@ -719,8 +714,7 @@ void DrillClientImpl::handleReadTimeout(const boost::system::error_code & err){
         // Check whether the deadline has passed.
         if (m_deadlineTimer.expires_at() <= boost::asio::deadline_timer::traits_type::now()){
             // The deadline has passed.
-            DRILL_LOG(LOG_TRACE) << "DrillClientImpl::handleReadTimeout: Deadline timer expired.\n";
-            DRILL_LOG(LOG_TRACE) << "DrillClientImpl::handleReadTimeout: ERR_QRY_TIMOUT.\n";
+			DRILL_LOG(LOG_TRACE) << "DrillClientImpl::handleReadTimeout: Deadline timer expired; ERR_QRY_TIMOUT. \n";
             handleQryError(QRY_TIMEOUT, getMessage(ERR_QRY_TIMOUT), NULL);
             // There is no longer an active deadline. The expiry is set to positive
             // infinity so that the timer never expires until a new deadline is set.

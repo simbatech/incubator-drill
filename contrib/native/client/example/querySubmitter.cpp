@@ -20,7 +20,6 @@
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>
-#include <boost/lexical_cast.hpp>
 #include "drill/drillc.hpp"
 
 int nOptions=10;
@@ -316,10 +315,10 @@ int main(int argc, char* argv[]) {
 
 
         if (!hshakeTimeout.empty()){
-            Drill::DrillClientConfig::setHandshakeTimeout(boost::lexical_cast<int>(hshakeTimeout));
+            Drill::DrillClientConfig::setHandshakeTimeout(atoi(hshakeTimeout.c_str()));
         }
         if (!queryTimeout.empty()){
-            Drill::DrillClientConfig::setQueryTimeout(boost::lexical_cast<int>(queryTimeout));
+			Drill::DrillClientConfig::setQueryTimeout(atoi(queryTimeout.c_str()));
         }
         if(client.connect(connectStr.c_str(), schema.c_str())!=Drill::CONN_SUCCESS){
             std::cerr<< "Failed to connect with error: "<< client.getError() << " (Using:"<<connectStr<<")"<<std::endl;

@@ -86,8 +86,12 @@ void DrillClientConfig::setSocketTimeout(int32_t t){
 }
 
 void DrillClientConfig::setHandshakeTimeout(int32_t t){
-    boost::lock_guard<boost::mutex> configLock(DrillClientConfig::s_mutex);
-    s_handshakeTimeout=t;
+	if (t > 0)
+	{
+		boost::lock_guard<boost::mutex> configLock(DrillClientConfig::s_mutex);
+		s_handshakeTimeout = t;
+	}
+
 }
 
 void DrillClientConfig::setQueryTimeout(int32_t t){
